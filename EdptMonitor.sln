@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdptMonitor.Server", "EdptMonitor.Server\EdptMonitor.Server.csproj", "{5AF97BB9-1493-4785-B330-F1B9E60D7F47}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdptMonitor.Client", "EdptMonitor.Client\EdptMonitor.Client.csproj", "{A535CE79-A2E3-44FD-8B12-180E21D0FCFF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdptMonitor.Shared", "EdptMonitor.Shared\EdptMonitor.Shared.csproj", "{16A58638-83AF-433B-8693-E8060E91879A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5AF97BB9-1493-4785-B330-F1B9E60D7F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AF97BB9-1493-4785-B330-F1B9E60D7F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AF97BB9-1493-4785-B330-F1B9E60D7F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AF97BB9-1493-4785-B330-F1B9E60D7F47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A535CE79-A2E3-44FD-8B12-180E21D0FCFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A535CE79-A2E3-44FD-8B12-180E21D0FCFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A535CE79-A2E3-44FD-8B12-180E21D0FCFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A535CE79-A2E3-44FD-8B12-180E21D0FCFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16A58638-83AF-433B-8693-E8060E91879A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16A58638-83AF-433B-8693-E8060E91879A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16A58638-83AF-433B-8693-E8060E91879A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16A58638-83AF-433B-8693-E8060E91879A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
