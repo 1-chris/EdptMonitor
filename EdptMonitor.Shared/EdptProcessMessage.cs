@@ -1,6 +1,6 @@
 ﻿namespace EdptMonitor.Shared;
 
-public class EndpointProcessMessage
+public class EdptProcessMessage
 {
     public DateTime TimeGenerated { get; set; }
     public Guid DeviceId { get; set; }

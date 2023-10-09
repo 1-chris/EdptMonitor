@@ -16,7 +16,7 @@ builder.Services.AddResponseCompression(options =>
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
         new[] { "application/octet-stream" });
 });
-builder.Services.AddSingleton<EndpointDataManager>();
+builder.Services.AddSingleton<EdptDataManager>();
 
 
 var app = builder.Build();
@@ -31,6 +31,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<EndpointHub>("/EndpointHub");
+app.MapHub<EdptHub>("/EdptHub");
 
 app.Run();

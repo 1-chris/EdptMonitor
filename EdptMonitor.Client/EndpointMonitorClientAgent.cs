@@ -37,7 +37,7 @@ public class EndpointMonitorClientAgent
         TotalPhysicalMemoryMb = GetTotalPhysicalMemory();
 
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(EndpointBase + "EndpointHub")
+            .WithUrl(EndpointBase + "EdptHub")
             .WithAutomaticReconnect()
             .Build();
     }
@@ -73,7 +73,7 @@ public class EndpointMonitorClientAgent
             var processCount = Process.GetProcesses().Length;
             var uptimeTotalDays = (DateTime.Now - LastBootUpTime).TotalDays;
 
-            EndpointStatusMessage data = new()
+            EdptStatusMessage data = new()
             {
                 DeviceId = DeviceId,
                 AzureADDeviceId = AzureADDeviceId,
@@ -87,7 +87,7 @@ public class EndpointMonitorClientAgent
                 TimeGenerated = DateTime.UtcNow
             };
             
-            _hubConnection.SendAsync("EndpointStatus", data);
+            _hubConnection.SendAsync("EdptStatus", data);
             await Task.Delay(DataCollectionInterval);
         }
     }   
@@ -104,7 +104,7 @@ public class EndpointMonitorClientAgent
             {
                 Process process = currentProcesses[processId];
 
-                EndpointProcessMessage data = new()
+                EdptProcessMessage data = new()
                 {
                     TimeGenerated = DateTime.UtcNow,
                     DeviceId = DeviceId,
@@ -114,7 +114,7 @@ public class EndpointMonitorClientAgent
                     ProcessId = process.Id,
                 };
         
-                await _hubConnection.SendAsync("EndpointProcessData", data);
+                await _hubConnection.SendAsync("EdptProcessData", data);
             }
 
             _previousProcesses = currentProcesses;
@@ -126,7 +126,7 @@ public class EndpointMonitorClientAgent
     }
     public async Task ProcessCreationWatcher_EventArrived(object sender, EventArrivedEventArgs e)
     {
-        EndpointProcessMessage data = new()
+        EdptProcessMessage data = new()
         {
             TimeGenerated = DateTime.UtcNow,
             DeviceId = DeviceId,

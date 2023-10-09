@@ -1,6 +1,6 @@
 ﻿namespace EdptMonitor.Shared;
 
-public class EndpointStatusMessage
+public class EdptStatusMessage
 {
     public DateTime TimeGenerated { get; set; } = DateTime.UtcNow;
     public Guid DeviceId { get; set; }
