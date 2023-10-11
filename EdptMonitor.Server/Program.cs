@@ -1,15 +1,14 @@
+using Azure.Identity;
+using Azure.Monitor.Ingestion;
 using EndpointMtr.Server.Hubs;
 using EndpointMtr.Server.Services;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Azure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 builder.Services.AddResponseCompression(options =>
 {
@@ -17,20 +16,24 @@ builder.Services.AddResponseCompression(options =>
         new[] { "application/octet-stream" });
 });
 builder.Services.AddSingleton<EdptDataManager>();
+builder.Services.AddHostedService<EdptDataExporter>();
 
+if (builder.Configuration["AzKeyVaultEndpointUri"] is not null)
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(builder.Configuration["AzKeyVaultEndpointUri"]), new DefaultAzureCredential(true));
+}
+
+builder.Services.AddAzureClients(clientBuilder =>
+{
+    clientBuilder.AddLogsIngestionClient(new Uri(builder.Configuration["LogIngestionEndpointUri"]));
+    clientBuilder.UseCredential(new DefaultAzureCredential(true));
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
-app.MapControllers();
 app.MapHub<EdptHub>("/EdptHub");
 
 app.Run();

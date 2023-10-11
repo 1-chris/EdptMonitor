@@ -54,6 +54,7 @@ public class EndpointMonitorClientAgent
                 ManagementEventWatcher processCreationWatcher = new ManagementEventWatcher(processCreationQuery);
                 processCreationWatcher.EventArrived += (sender, e) => ProcessCreationWatcher_EventArrived(sender, e);
                 processCreationWatcher.Start();
+                Console.WriteLine("Watching processes.");
             }
             catch (Exception ex)
             {
@@ -114,7 +115,7 @@ public class EndpointMonitorClientAgent
                     ProcessId = process.Id,
                 };
         
-                await _hubConnection.SendAsync("EdptProcessData", data);
+                await _hubConnection.SendAsync("EdptProcess", data);
             }
 
             _previousProcesses = currentProcesses;
@@ -126,6 +127,7 @@ public class EndpointMonitorClientAgent
     }
     public async Task ProcessCreationWatcher_EventArrived(object sender, EventArrivedEventArgs e)
     {
+        Console.WriteLine("New processes created");
         EdptProcessMessage data = new()
         {
             TimeGenerated = DateTime.UtcNow,
@@ -136,7 +138,7 @@ public class EndpointMonitorClientAgent
             ProcessId = (int)e.NewEvent.Properties["ProcessID"].Value,
         };
         
-        await _hubConnection.SendAsync("ProcessData", data);
+        await _hubConnection.SendAsync("EdptProcess", data);
     }
     public static Guid GetDeviceId()
     {
@@ -149,7 +151,6 @@ public class EndpointMonitorClientAgent
         // TODO: implement for Linux
         return Guid.Empty;
     }
-
     public static Guid GetAzureAdDeviceId()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
