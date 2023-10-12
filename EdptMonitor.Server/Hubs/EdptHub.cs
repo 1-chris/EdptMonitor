@@ -40,13 +40,13 @@ public class EdptHub : Hub
     
     public async Task EdptStatus(EdptStatusMessage statusMessage)
     {
-        _logger.LogInformation($"{JsonSerializer.Serialize(statusMessage)}");
+        // _logger.LogInformation($"{JsonSerializer.Serialize(statusMessage)}");
         _dataManager.EndpointStatusMessages.Enqueue(statusMessage);
     }
     
     public async Task EdptProcess(EdptProcessMessage processMessage)
     {
-        _logger.LogInformation($"{JsonSerializer.Serialize(processMessage)}");
+        // _logger.LogInformation($"{JsonSerializer.Serialize(processMessage)}");
         _dataManager.EndpointProcessMessages.Enqueue(processMessage);
     }
 }
