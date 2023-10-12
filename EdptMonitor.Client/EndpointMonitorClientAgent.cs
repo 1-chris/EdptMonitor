@@ -44,7 +44,20 @@ public class EndpointMonitorClientAgent
     
     public async void Initiate()
     {
-        await _hubConnection?.StartAsync()!;
+        while (_hubConnection?.State != HubConnectionState.Connected)
+        {
+            try
+            {
+                await _hubConnection?.StartAsync()!;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            await Task.Delay(1000);
+        }
+
+        Console.WriteLine("Connection established.");
         
         _previousProcesses = GetCurrentProcesses();
 
@@ -74,21 +87,28 @@ public class EndpointMonitorClientAgent
             var processCount = Process.GetProcesses().Length;
             var uptimeTotalDays = (DateTime.Now - LastBootUpTime).TotalDays;
 
-            EdptStatusMessage data = new()
+            if (_hubConnection?.State == HubConnectionState.Connected)
             {
-                DeviceId = DeviceId,
-                AzureADDeviceId = AzureADDeviceId,
-                ComputerName = ComputerName,
-                LastBootUpTime = LastBootUpTime,
-                CpuLoad = await cpuLoad,
-                ProcessCount = processCount,
-                FreeStorageMB = await freeStorage,
-                FreePhysicalMemoryMB = await freeMemory,
-                PingMs = await pingMs,
-                TimeGenerated = DateTime.UtcNow
-            };
-            
-            _hubConnection.SendAsync("EdptStatus", data);
+                EdptStatusMessage data = new()
+                {
+                    DeviceId = DeviceId,
+                    AzureADDeviceId = AzureADDeviceId,
+                    ComputerName = ComputerName,
+                    LastBootUpTime = LastBootUpTime,
+                    CpuLoad = await cpuLoad,
+                    ProcessCount = processCount,
+                    FreeStorageMB = await freeStorage,
+                    FreePhysicalMemoryMB = await freeMemory,
+                    PingMs = await pingMs,
+                    TimeGenerated = DateTime.UtcNow
+                };
+                _hubConnection.SendAsync("EdptStatus", data);
+                
+            }
+            else
+            {
+                Console.WriteLine("Hub connection is not established.");
+            }
             await Task.Delay(DataCollectionInterval);
         }
     }   
@@ -103,19 +123,26 @@ public class EndpointMonitorClientAgent
 
             foreach (var processId in newProcesses)
             {
-                Process process = currentProcesses[processId];
-
-                EdptProcessMessage data = new()
+                if (_hubConnection?.State == HubConnectionState.Connected)
                 {
-                    TimeGenerated = DateTime.UtcNow,
-                    DeviceId = DeviceId,
-                    AzureADDeviceId = AzureADDeviceId,
-                    ComputerName = ComputerName,
-                    ProcessName = process.ProcessName,
-                    ProcessId = process.Id,
-                };
-        
-                await _hubConnection.SendAsync("EdptProcess", data);
+                    Process process = currentProcesses[processId];
+
+                    EdptProcessMessage data = new()
+                    {
+                        TimeGenerated = DateTime.UtcNow,
+                        DeviceId = DeviceId,
+                        AzureADDeviceId = AzureADDeviceId,
+                        ComputerName = ComputerName,
+                        ProcessName = process.ProcessName,
+                        ProcessId = process.Id,
+                    };
+            
+                    await _hubConnection.SendAsync("EdptProcess", data);
+                }
+                else
+                {
+                    Console.WriteLine("Hub connection is not established.");
+                }
             }
 
             _previousProcesses = currentProcesses;
@@ -127,18 +154,23 @@ public class EndpointMonitorClientAgent
     }
     public async Task ProcessCreationWatcher_EventArrived(object sender, EventArrivedEventArgs e)
     {
-        Console.WriteLine("New processes created");
-        EdptProcessMessage data = new()
+        if (_hubConnection?.State == HubConnectionState.Connected)
         {
-            TimeGenerated = DateTime.UtcNow,
-            DeviceId = DeviceId,
-            AzureADDeviceId = AzureADDeviceId,
-            ComputerName = ComputerName,
-            ProcessName = e.NewEvent.Properties["ProcessName"].Value.ToString(),
-            ProcessId = (int)e.NewEvent.Properties["ProcessID"].Value,
-        };
-        
-        await _hubConnection.SendAsync("EdptProcess", data);
+            EdptProcessMessage data = new()
+            {
+                TimeGenerated = DateTime.UtcNow,
+                DeviceId = DeviceId,
+                AzureADDeviceId = AzureADDeviceId,
+                ComputerName = ComputerName,
+                ProcessName = e.NewEvent.Properties["ProcessName"].Value.ToString(),
+                ProcessId = Convert.ToInt32(e.NewEvent.Properties["ProcessID"].Value),
+            };
+            await _hubConnection.SendAsync("EdptProcess", data);
+        }
+        else
+        {
+            Console.WriteLine("Hub connection is not established.");
+        }
     }
     public static Guid GetDeviceId()
     {
