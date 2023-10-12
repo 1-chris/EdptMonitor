@@ -38,7 +38,7 @@ public class EndpointMonitorClientAgent
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(EndpointBase + "EdptHub")
-            .WithAutomaticReconnect()
+            .WithAutomaticReconnect(new SignalRRetryPolicy())
             .Build();
     }
     
