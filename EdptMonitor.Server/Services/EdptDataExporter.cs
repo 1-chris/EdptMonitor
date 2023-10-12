@@ -32,9 +32,8 @@ public class EdptDataExporter : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            // _logger.LogInformation("Running exports....");
             await ExportStatusMessages();
-            //await ExportProcessMessages();
+            await ExportProcessMessages();
 
             await Task.Delay(10000, stoppingToken);
         }
@@ -43,16 +42,15 @@ public class EdptDataExporter : BackgroundService
     private async Task ExportStatusMessages()
     {
         ConcurrentQueue<EdptStatusMessage> statusMessagesToSend = new();
-        while (_dataManager.EndpointStatusMessages.TryDequeue(out var messageToSend) && statusMessagesToSend?.Count <= MaxBatch)
+        var start = DateTime.UtcNow;
+        while (_dataManager.EndpointStatusMessages.TryDequeue(out var messageToSend) && statusMessagesToSend?.Count <= MaxBatch || start.AddSeconds(15) > DateTime.Now)
         {
             if (messageToSend != null) statusMessagesToSend?.Enqueue(messageToSend);
-            await Task.Delay(100);
+            await Task.Delay(50);
         }
 
         if (statusMessagesToSend?.Count > 0)
         {
-            _logger.LogInformation("Sending data....");
-            
             await _ingestionClient.UploadAsync(
                 _logIngestionStatusMessageRuleId, 
                 _logIngestionStatusMessageStreamName, 
@@ -63,18 +61,21 @@ public class EdptDataExporter : BackgroundService
 
     private async Task ExportProcessMessages()
     {
-        ConcurrentQueue<EdptStatusMessage> processMessagesToSend = new();
-        while (_dataManager.EndpointStatusMessages.TryDequeue(out var messageToSend) && processMessagesToSend?.Count <= MaxBatch)
+        ConcurrentQueue<EdptProcessMessage> processMessagesToSend = new();
+        var start = DateTime.UtcNow;
+        while (_dataManager.EndpointProcessMessages.TryDequeue(out var messageToSend) && processMessagesToSend?.Count <= MaxBatch || start.AddSeconds(15) > DateTime.Now)
         {
             if (messageToSend != null) processMessagesToSend?.Enqueue(messageToSend);
         }
-            
-        if (processMessagesToSend?.Count > 0) 
+
+        if (processMessagesToSend?.Count > 0)
+        {
             await _ingestionClient.UploadAsync(
                 _logIngestionProcessMessageRuleId, 
                 _logIngestionProcessMessageStreamName, 
                 processMessagesToSend
             );
+        }
 
     }
     
