@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Management;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using EdptMonitor.Shared;
 using Microsoft.Win32;
@@ -11,30 +10,30 @@ namespace EdptMonitor.Client;
 
 public class EndpointMonitorClientAgent
 {
-    public int DataCollectionInterval = 60000;
-    public string EndpointBase { get; set; } = "https://your.domain.com/";
-    public string AuthorizationToken { get; set; } = "";
+    public readonly int DataCollectionInterval;
+    public string EndpointBase { get; set; }
+    // public string AuthorizationToken { get; set; }
     public Guid DeviceId { get; set; }
-    public Guid AzureADDeviceId { get; set; }
+    public Guid AzureAdDeviceId { get; set; }
     public string ComputerName { get; set; }
     public DateTime LastBootUpTime { get; set; }
-    public int TotalPhysicalMemoryMb { get; set; }
+    // public int TotalPhysicalMemoryMb { get; set; }
 
-    private Dictionary<int, Process> _previousProcesses;
+    private Dictionary<int, Process>? _previousProcesses;
     private HubConnection? _hubConnection;
     
 
     public EndpointMonitorClientAgent(EndpointMonitorClientConfiguration config)
     {
         EndpointBase = config.EndpointUrl;
-        AuthorizationToken = config.AuthorizationToken;
+        // AuthorizationToken = config.AuthorizationToken;
         DataCollectionInterval = config.DataCollectionInterval;
 
         DeviceId = GetDeviceId();
-        AzureADDeviceId = GetAzureAdDeviceId();
+        AzureAdDeviceId = GetAzureAdDeviceId();
         ComputerName = Environment.MachineName;
         LastBootUpTime = GetLastBootUpTime();
-        TotalPhysicalMemoryMb = GetTotalPhysicalMemory();
+        // TotalPhysicalMemoryMb = GetTotalPhysicalMemory();
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(EndpointBase + "EdptHub")
@@ -65,7 +64,7 @@ public class EndpointMonitorClientAgent
             try {
                 string processCreationQuery = "SELECT * FROM Win32_ProcessStartTrace";
                 ManagementEventWatcher processCreationWatcher = new ManagementEventWatcher(processCreationQuery);
-                processCreationWatcher.EventArrived += (sender, e) => ProcessCreationWatcher_EventArrived(sender, e);
+                processCreationWatcher.EventArrived += ProcessCreationWatcher_EventArrived;
                 processCreationWatcher.Start();
                 Console.WriteLine("Watching processes.");
             }
@@ -85,24 +84,23 @@ public class EndpointMonitorClientAgent
             var pingMs = GetPingMsAsync();
             var freeStorage = GetFreeStorageAsync();
             var processCount = Process.GetProcesses().Length;
-            var uptimeTotalDays = (DateTime.Now - LastBootUpTime).TotalDays;
 
             if (_hubConnection?.State == HubConnectionState.Connected)
             {
                 EdptStatusMessage data = new()
                 {
                     DeviceId = DeviceId,
-                    AzureADDeviceId = AzureADDeviceId,
+                    AzureAdDeviceId = AzureAdDeviceId,
                     ComputerName = ComputerName,
                     LastBootUpTime = LastBootUpTime,
                     CpuLoad = await cpuLoad,
                     ProcessCount = processCount,
-                    FreeStorageMB = await freeStorage,
-                    FreePhysicalMemoryMB = await freeMemory,
+                    FreeStorageMb = await freeStorage,
+                    FreePhysicalMemoryMb = await freeMemory,
                     PingMs = await pingMs,
                     TimeGenerated = DateTime.UtcNow
                 };
-                _hubConnection.SendAsync("EdptStatus", data);
+                await _hubConnection.SendAsync("EdptStatus", data);
                 
             }
             else
@@ -111,6 +109,7 @@ public class EndpointMonitorClientAgent
             }
             await Task.Delay(DataCollectionInterval);
         }
+        // ReSharper disable once FunctionNeverReturns
     }   
     public async Task WatchProcessesAsync()
     {
@@ -119,7 +118,7 @@ public class EndpointMonitorClientAgent
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             var currentProcesses = GetCurrentProcesses();
-            var newProcesses = currentProcesses.Keys.Except(_previousProcesses.Keys);
+            var newProcesses = currentProcesses.Keys.Except(_previousProcesses?.Keys!);
 
             foreach (var processId in newProcesses)
             {
@@ -131,7 +130,7 @@ public class EndpointMonitorClientAgent
                     {
                         TimeGenerated = DateTime.UtcNow,
                         DeviceId = DeviceId,
-                        AzureADDeviceId = AzureADDeviceId,
+                        AzureAdDeviceId = AzureAdDeviceId,
                         ComputerName = ComputerName,
                         ProcessName = process.ProcessName,
                         ProcessId = process.Id,
@@ -147,30 +146,33 @@ public class EndpointMonitorClientAgent
 
             _previousProcesses = currentProcesses;
         }
+        // ReSharper disable once FunctionNeverReturns
     }
     public static Dictionary<int, Process> GetCurrentProcesses()
     {
         return Process.GetProcesses().ToDictionary(p => p.Id);
     }
-    public async Task ProcessCreationWatcher_EventArrived(object sender, EventArrivedEventArgs e)
+    public void ProcessCreationWatcher_EventArrived(object sender, EventArrivedEventArgs e)
     {
+        #pragma warning disable CA1416
         if (_hubConnection?.State == HubConnectionState.Connected)
         {
             EdptProcessMessage data = new()
             {
                 TimeGenerated = DateTime.UtcNow,
                 DeviceId = DeviceId,
-                AzureADDeviceId = AzureADDeviceId,
+                AzureAdDeviceId = AzureAdDeviceId,
                 ComputerName = ComputerName,
                 ProcessName = e.NewEvent.Properties["ProcessName"].Value.ToString(),
                 ProcessId = Convert.ToInt32(e.NewEvent.Properties["ProcessID"].Value),
             };
-            await _hubConnection.SendAsync("EdptProcess", data);
+            _hubConnection.SendAsync("EdptProcess", data);
         }
         else
         {
             Console.WriteLine("Hub connection is not established.");
         }
+        #pragma warning restore CA1416
     }
     public static Guid GetDeviceId()
     {
@@ -192,7 +194,8 @@ public class EndpointMonitorClientAgent
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            using var process = new Process { StartInfo = startInfo };
+            using var process = new Process();
+            process.StartInfo = startInfo;
             process.Start();
             var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
@@ -250,7 +253,8 @@ public class EndpointMonitorClientAgent
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            using var process = new Process { StartInfo = startInfo };
+            using var process = new Process();
+            process.StartInfo = startInfo;
             process.Start();
             string output = await process.StandardOutput.ReadToEndAsync();
             process.WaitForExit();
@@ -279,13 +283,14 @@ public class EndpointMonitorClientAgent
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            using var process = new Process { StartInfo = startInfo };
+            using var process = new Process();
+            process.StartInfo = startInfo;
             process.Start();
             string output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
 
             var match = Regex.Match(output, @"Mem:\s+(?<total>\d+)\s+\d+\s+\d+");
-            var success = int.TryParse(match.Groups["total"].Value, out var totalMemoryMb);
+            int.TryParse(match.Groups["total"].Value, out var totalMemoryMb);
             return match.Success ? totalMemoryMb : 0;
         }
         
@@ -309,7 +314,8 @@ public class EndpointMonitorClientAgent
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            using var process = new Process { StartInfo = startInfo };
+            using var process = new Process();
+            process.StartInfo = startInfo;
             process.Start();
             string output = await process.StandardOutput.ReadToEndAsync();
             process.WaitForExit();
@@ -341,7 +347,8 @@ public class EndpointMonitorClientAgent
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            using var process = new Process { StartInfo = startInfo };
+            using var process = new Process();
+            process.StartInfo = startInfo;
             process.Start();
             string output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();

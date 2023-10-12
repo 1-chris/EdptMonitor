@@ -2,6 +2,6 @@
 
 public class Edpt
 {
-    public string ComputerName { get; set; }
-    public string ConnectionId { get; set; }
+    public string? ComputerName { get; set; }
+    public string? ConnectionId { get; set; }
 }
